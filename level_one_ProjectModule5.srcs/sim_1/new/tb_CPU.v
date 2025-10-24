@@ -10,8 +10,9 @@ module tb_CPU;
 
     always #5 clk = ~clk;
 
-    initial begin
-        #20 reset = 0;
-        #100 $stop;
+     initial begin
+        reset = 1;
+        #50 reset = 0;
+        #200 $stop;
     end
 endmodule

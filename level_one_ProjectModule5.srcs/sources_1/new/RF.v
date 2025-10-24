@@ -17,14 +17,15 @@ integer i;
 
 always @(posedge clk or posedge reset) begin  
     if (reset) begin 
-        for (i=0; i<32; i = i + 1)
-        registers[i] <= 32'b0;    
+        for (i = 0; i < 32; i = i + 1)
+            registers[i] <= 32'b0;    
     end 
     else if (register_write && rd != 0)
         registers[rd] <= write_data; 
 end 
 
+// ✅ Add combinational reads
 assign read_data1 = registers[rs1];
-assign read_data2 = registers [rs2];        
+assign read_data2 = registers[rs2];        
 
 endmodule
