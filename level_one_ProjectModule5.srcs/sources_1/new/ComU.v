@@ -10,7 +10,12 @@ module ComU #(
     output wire [3:0]   ready,
     output wire [9:0]   addr,
     output wire [23:0]  pixel_data,
-    output wire         rec_done
+    output wire         rec_done,
+    output wire [15:0]  led,
+    output wire [3:0]   D0_AN,
+    output wire [7:0]   D0_SEG,
+    output wire [3:0]   D1_AN,
+    output wire [7:0]   D1_SEG
 );
     wire [23:0] bram_dout;
     wire tx_ready;
@@ -59,6 +64,9 @@ module ComU #(
     reg [23:0] packet_raw;
 
     reg [31:0] count_packets = 32'd0;
+    reg [15:0] led_show      = 16'd0;
+
+    assign led[15:0] = led_show[15:0];
 
 
     
@@ -133,6 +141,8 @@ module ComU #(
             ST_CHECK: begin
                 if (packet_ok) begin
                     count_packets <= count_packets + 1;
+                    led_show      <= count_packets[15:0] + 1;
+
                 end   
                 else begin   
                     timeout_flag <= 1'b1;
@@ -142,6 +152,7 @@ module ComU #(
             
             
             ST_DONE: begin
+                led_show <= 16'hFFFF;
                 receive_done   <= 1;
                 if (send_done & need_new_pix) begin
                     receive_done  <= 0;              

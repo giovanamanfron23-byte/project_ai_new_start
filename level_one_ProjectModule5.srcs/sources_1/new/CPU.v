@@ -4,7 +4,12 @@ module CPU(
     input wire clk,
     input wire reset,
     input wire rxd,
-    output wire txd
+    output wire txd,
+    output wire [15:0]  led,
+    output wire [3:0]   D0_AN,
+    output wire [7:0]   D0_SEG,
+    output wire [3:0]   D1_AN,
+    output wire [7:0]   D1_SEG
 );
 
     // Program Counter
@@ -117,8 +122,12 @@ module CPU(
         .ready(ready_to_write),
         .addr(pix_addr),
         .pixel_data(pix_info),
-        .rec_done(data_received)
-        
+        .rec_done(data_received),
+        .led(led),
+        .D0_AN(D0_AN),
+        .D0_SEG(D0_SEG),
+        .D1_AN(D1_AN),
+        .D1_SEG(D1_SEG)
     );
 
     // Write-back MUX
