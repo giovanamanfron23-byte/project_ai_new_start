@@ -2,7 +2,9 @@
 
 module CPU(
     input wire clk,
-    input wire reset
+    input wire reset,
+    input wire rxd,
+    output wire txd
 );
 
     // Program Counter
@@ -87,6 +89,15 @@ module CPU(
         .address(ALU_result),
         .write_data(read_data2),
         .read_data(read_data_memory)
+    );
+    
+    ComU #(
+    .FREQ(100_000_000), 
+    .BAUD(625_000)
+    ) Communication_Unit(
+        .clk(clk),
+        .rxd(rxd),
+        .txd(txd)
     );
 
     // Write-back MUX
