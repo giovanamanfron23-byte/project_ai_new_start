@@ -90,6 +90,21 @@ module CPU(
         .write_data(read_data2),
         .read_data(read_data_memory)
     );
+    wire [23:0] pix_out;
+    wire [3:0] ready_to_write;
+    wire [9:0] pix_addr;
+    wire [23:0] pix_info;
+    wire        data_received;
+    wire        need_new_pix;
+    
+    RAM pixel_storage(
+        .clk(clk),
+        .addr_i(pix_addr),
+        .din_i(pix_info),
+        .we_i(ready_to_write),
+        .dout_o(pix_out)
+    
+    );
     
     ComU #(
     .FREQ(100_000_000), 
@@ -97,7 +112,13 @@ module CPU(
     ) Communication_Unit(
         .clk(clk),
         .rxd(rxd),
-        .txd(txd)
+        .need_new_pix(need_new_pix),
+        .txd(txd),
+        .ready(ready_to_write),
+        .addr(pix_addr),
+        .pixel_data(pix_info),
+        .rec_done(data_received)
+        
     );
 
     // Write-back MUX

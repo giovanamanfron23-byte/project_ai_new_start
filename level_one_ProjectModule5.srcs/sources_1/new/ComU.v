@@ -5,7 +5,12 @@ module ComU #(
 (
     input  wire         clk,
     input  wire         rxd,
-    output wire         txd
+    input  wire         need_new_pix,
+    output wire         txd,
+    output wire [3:0]   ready,
+    output wire [9:0]   addr,
+    output wire [23:0]  pixel_data,
+    output wire         rec_done
 );
     wire [23:0] bram_dout;
     wire tx_ready;
@@ -138,7 +143,7 @@ module ComU #(
             
             ST_DONE: begin
                 receive_done   <= 1;
-                if (send_done) begin
+                if (send_done & need_new_pix) begin
                     receive_done  <= 0;              
                     count_packets <= 32'd0;     
                     timeout_flag  <= 1'b0;
@@ -254,4 +259,9 @@ module ComU #(
         .txd_ready(tx_ready)
     );
     
+assign ready = ((fsm_state == ST_CHECK && packet_ok)? 4'b1111 : 4'b0000);
+assign addr = bram_addr;
+assign pixel_data = packet_raw;
+assign rec_done = receive_done;
+
 endmodule
