@@ -259,6 +259,67 @@ module ComU #(
         .txd_ready(tx_ready)
     );
     
+    
+      reg  [3:0] digit_data [7:0];
+    parameter REFRESH_PERIOD = 2000;
+    
+    always @(*) begin
+        digit_data[0] = count_packets[19:16];
+        digit_data[1] = count_packets[23:20];
+        digit_data[2] = count_packets[27:24];
+        digit_data[3] = count_packets[31:28];
+        
+        digit_data[4] = count_packets[3:0];
+        digit_data[5] = count_packets[7:4];
+        digit_data[6] = count_packets[11:8];
+        digit_data[7] = count_packets[15:12];
+    end
+
+    reg [2:0] digit_index = 0;
+    reg [15:0] refresh_counter = 0;
+
+    always @(posedge clk) begin
+        if (refresh_counter >= REFRESH_PERIOD) begin
+            refresh_counter <= 0;
+            digit_index <= digit_index + 1;
+        end else begin
+            refresh_counter <= refresh_counter + 1;
+        end
+    end
+
+    wire [3:0] active_digit = digit_data[digit_index];
+    wire [6:0] seg_val;
+
+    seven_segment_decoder_hex decoder (
+        .digit(active_digit),
+        .seg(seg_val)
+    );
+
+    reg [3:0] D0_AN_reg, D1_AN_reg;
+    reg [7:0] D0_SEG_reg, D1_SEG_reg;
+
+    always @(*) begin
+        D0_AN_reg = 4'b1111;
+        D1_AN_reg = 4'b1111;
+        D0_SEG_reg = 8'b11111111;
+        D1_SEG_reg = 8'b11111111;
+
+        if (digit_index < 4) begin
+            D0_AN_reg[digit_index] = 0;
+            D0_SEG_reg[6:0] = seg_val;
+            D0_SEG_reg[7]   = 1;
+        end else begin
+            D1_AN_reg[digit_index - 4] = 0;
+            D1_SEG_reg[6:0] = seg_val;
+            D1_SEG_reg[7]   = 1;
+        end
+    end
+    
+    assign D0_AN  = D0_AN_reg;
+    assign D0_SEG = D0_SEG_reg;
+    assign D1_AN  = D1_AN_reg;
+    assign D1_SEG = D1_SEG_reg;
+    
 assign ready = ((fsm_state == ST_CHECK && packet_ok)? 4'b1111 : 4'b0000);
 assign addr = bram_addr;
 assign pixel_data = packet_raw;
