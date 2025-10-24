@@ -17,9 +17,8 @@ module CPU(
     wire [4:0] rd        = instruction[17:13];
     wire [12:0] imm      = instruction[12:0];
 
-    // Sign-extend immediate (13-bit → 32-bit)
-    wire [31:0] imm_ext  = {{19{imm[12]}}, imm};
-
+    wire [31:0] imm_ext = (opcode == 4'b1010 || opcode == 4'b1011) ? {19'b0, imm} : {{19{imm[12]}}, imm};
+    
     // Control Signals
     wire register_write;
     wire ALUSrc;
@@ -95,7 +94,11 @@ module CPU(
     // Next PC logic (normal increment or branch)
     wire [31:0] PC_plus4 = PC + 32'd4;
     wire [31:0] branch_target = PC + (imm_ext << 2);
-    assign next_pc = (branch && zero_flag) ? branch_target : PC_plus4;
+    
+    wire is_beq = (opcode == 4'b1100);
+    wire is_bne = (opcode == 4'b1101);
+    wire branch_condition = (is_beq && zero_flag) || (is_bne && !zero_flag);
+    assign next_pc = (branch && branch_condition) ? branch_target : PC_plus4;
 
     // Program Counter update
     always @(posedge clk or posedge reset) begin

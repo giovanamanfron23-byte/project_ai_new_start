@@ -12,20 +12,33 @@ module RF(
     output wire [31:0] read_data2 
 );
 
-reg [31:0] registers [0:31]; 
-integer i; 
+    reg [31:0] registers [0:31]; 
+    integer i; 
+    
 
-always @(posedge clk or posedge reset) begin  
-    if (reset) begin 
+    // ✅ Initialize all registers to 0 for simulation stability
+    initial begin
         for (i = 0; i < 32; i = i + 1)
-            registers[i] <= 32'b0;    
-    end 
-    else if (register_write && rd != 0)
-        registers[rd] <= write_data; 
-end 
+            registers[i] = 32'd0;
+        
+        // Optional: preload a few registers with known values for debugging
+        registers[1] = 32'd5;
+        registers[2] = 32'd10;
+        registers[3] = 32'd15;
+    end
 
-// ✅ Add combinational reads
-assign read_data1 = registers[rs1];
-assign read_data2 = registers[rs2];        
+    // ✅ Reset and write logic
+    always @(posedge clk or posedge reset) begin  
+        if (reset) begin 
+            for (i = 0; i < 32; i = i + 1)
+                registers[i] <= 32'b0;    
+        end 
+        else if (register_write && rd != 0)
+            registers[rd] <= write_data; 
+    end 
+
+    // ✅ Combinational reads
+    assign read_data1 = registers[rs1];
+    assign read_data2 = registers[rs2];        
 
 endmodule

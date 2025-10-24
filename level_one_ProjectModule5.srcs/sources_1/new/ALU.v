@@ -16,7 +16,7 @@ always @(*) begin
         3'b100: result = A | B;                       // (optional future OR)
         3'b101: result = A ^ B;                       // (optional XOR)
         3'b110: result = (A < B) ? 32'b1 : 32'b0;     // (optional SLT)
-        3'b111: result = A << B;                      // NEW → SLL (shift left logical)
+        3'b111: result = A << B[4:0];                      // NEW → SLL (shift left logical)
         default: result = 32'b0;
     endcase
 end
