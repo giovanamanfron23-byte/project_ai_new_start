@@ -8,7 +8,8 @@ module CU(
     output reg memory_read, 
     output reg memory_write, 
     output reg memory_to_register, 
-    output reg branch
+    output reg branch,
+    output reg branch_ne  // NEW SIGNAL for BNE
 );
 
 always @(*) begin 
@@ -20,54 +21,56 @@ always @(*) begin
     memory_write = 0; 
     memory_to_register = 0; 
     branch = 0; 
-    
+    branch_ne = 0; // default
+
     case (opcode)
         4'b0000: begin              // ADD
             register_write = 1;     
             ALUSrc = 0;
-            ALUopcode = 3'b000;     // ALU adds
-        end                                 
+            ALUopcode = 3'b000;
+        end
         4'b0001: begin              // SUB
             register_write = 1;     
             ALUSrc = 0;
-            ALUopcode = 3'b001;     // ALU subtracts
+            ALUopcode = 3'b001;
         end
         4'b0010: begin              // MUL
             register_write = 1;     
             ALUSrc = 0;
-            ALUopcode = 3'b010;     // ALU multiplies
+            ALUopcode = 3'b010;
         end
-        4'b0111: begin              // ADDI (immediate add)
+        4'b0111: begin              // ADDI
             register_write = 1;
             ALUSrc = 1;
-            ALUopcode = 3'b000;     // ALU adds
+            ALUopcode = 3'b000;
         end
-        4'b1010: begin              // LW (load word)
+        4'b1010: begin              // LW
             register_write = 1;
             ALUSrc = 1; 
-            ALUopcode = 3'b000;     // address = base + offset
+            ALUopcode = 3'b000;
             memory_read = 1; 
-            memory_to_register = 1; // load from memory to register
+            memory_to_register = 1;
         end 
-        4'b1011: begin              // SW (store word)
+        4'b1011: begin              // SW
             ALUSrc = 1; 
-            ALUopcode = 3'b000;     // address = base + offset
+            ALUopcode = 3'b000;
             memory_write = 1;
         end 
-        4'b1100: begin              // BEQ (branch if equal)
+        4'b1100: begin              // BEQ
             branch = 1;
-            ALUopcode = 3'b001;     // use subtraction to compare
+            ALUopcode = 3'b001; // compare (A - B)
         end
-        4'b1101: begin              // BNE (branch if not equal)
+        4'b1101: begin              // BNE
             branch = 1;
-            ALUopcode = 3'b001;     // same compare (check Zero flag outside)
+            branch_ne = 1;          // NEW
+            ALUopcode = 3'b001;
         end
-        4'b1110: begin              // SLL (shift left logical)
+        4'b1110: begin              // SLL
             register_write = 1;
-            ALUopcode = 3'b111;     // shift operation
+            ALUopcode = 3'b111;
         end
         default: begin
-            // all control signals remain at default (no-op)
+            // no-op
         end
     endcase
 end 
