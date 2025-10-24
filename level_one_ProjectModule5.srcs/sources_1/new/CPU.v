@@ -98,7 +98,7 @@ module CPU(
     wire        need_new_pix;
     
     RAM pixel_storage(
-        .clk(clk),
+        .clk_i(clk),
         .addr_i(pix_addr),
         .din_i(pix_info),
         .we_i(ready_to_write),
