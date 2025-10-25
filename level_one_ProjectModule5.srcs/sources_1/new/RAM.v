@@ -1,4 +1,3 @@
-
 module RAM(
     input clk_i,
     input [9:0] addr_i,
@@ -7,7 +6,7 @@ module RAM(
     output [23:0] dout_o
     );
     
-reg [23:0] BRAM [2**9:0];
+reg [23:0] BRAM [2**10:0];
 reg [23:0] ram_data = {24{1'b0}};
 
 assign dout_o = ram_data; //Write first Mode 
