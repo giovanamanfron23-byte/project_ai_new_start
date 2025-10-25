@@ -6,6 +6,7 @@ module instruction_memory(
 );
     reg [31:0] memory [0:255];
 
+/*generate
     initial begin
         // addi R1 = R0 + 1
         memory[0] = {4'b0111, 5'b00000, 5'b00000, 5'b00001, 13'd1};
@@ -46,6 +47,7 @@ module instruction_memory(
         // NOP / HALT (safe stop)
         memory[12] = 32'h00000000;
     end
+endgenerate */
 
     always @(*) begin
         instruction = memory[address[9:2]]; // word addressing

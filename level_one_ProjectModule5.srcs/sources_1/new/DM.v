@@ -10,8 +10,9 @@ module DM(
 );
 
     // 256 x 32-bit memory
-    reg [31:0] memory [0:255];
+    reg [31:0] memory [0:8191];
 
+/*generate 
     // Optional: manually preload a few words (for LW testing)
     initial begin
         memory[0] = 32'd10;
@@ -19,7 +20,7 @@ module DM(
         memory[2] = 32'd30;
         // Others left uninitialized (default X or 0)
     end
-
+endgenerate */
     // Asynchronous read
     always @(*) begin
         if (memory_read)

@@ -14,7 +14,7 @@ module RF(
 
     reg [31:0] registers [0:31]; 
     integer i; 
-    
+/* generate 
 
     // ✅ Initialize all registers to 0 for simulation stability
     initial begin
@@ -26,7 +26,7 @@ module RF(
         registers[2] = 32'd10;
         registers[3] = 32'd15;
     end
-
+endgenerate */
     // ✅ Reset and write logic
     always @(posedge clk or posedge reset) begin  
         if (reset) begin 

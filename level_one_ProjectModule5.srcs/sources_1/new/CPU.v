@@ -1,8 +1,12 @@
 `timescale 1ns / 1ps
 
-module CPU(
+module CPU#(
+    parameter FREQ = 100_000_000,
+    parameter BAUD = 625_000
+)
+(
     input wire clk,
-    input wire reset,
+    input wire rst,
     input wire rxd,
     output wire txd,
     output wire [15:0]  led,
@@ -63,7 +67,7 @@ module CPU(
     // Register File
     RF regfile (
         .clk(clk),
-        .reset(reset),
+        .reset(rst),
         .register_write(register_write),
         .rs1(rs1),
         .rs2(rs2),
@@ -111,8 +115,8 @@ module CPU(
     );
     
     ComU #(
-    .FREQ(100_000_000), 
-    .BAUD(625_000)
+    .FREQ(FREQ), 
+    .BAUD(BAUD)
     ) Communication_Unit(
         .clk(clk),
         .rxd(rxd),
@@ -133,7 +137,7 @@ module CPU(
     assign write_data = (memory_to_register) ? read_data_memory : ALU_result;
 
     // Next PC logic (normal increment or branch)
-    wire [31:0] PC_plus4 = PC + 32'd4;
+/*    wire [31:0] PC_plus4 = PC + 32'd4;
     wire [31:0] branch_target = PC + (imm_ext << 2);
     
     wire is_beq = (opcode == 4'b1100);
@@ -142,12 +146,49 @@ module CPU(
     assign next_pc = (branch && branch_condition) ? branch_target : PC_plus4;
 
     // Program Counter update
-    always @(posedge clk or posedge reset) begin
-        if (reset)
+    always @(posedge clk or posedge rst) begin
+        if (rst)
             PC <= 0;
         else
             PC <= next_pc;
     end
+*/
+
+ localparam ST_IDLE    = 2'd0,
+               ST_RX   = 2'd1,
+               ST_CALC   = 2'd2,
+               ST_TRY   = 2'd3,
+               ST_GO    = 3'd4;
+               
+    
+    reg  [2:0]  fsm_state = ST_IDLE;
+
+always @(posedge clk) begin
+    if(rst)begin
+    
+    end
+    else begin
+    case (fsm_state)
+    
+    ST_IDLE:begin
+    
+    fsm_state <= ST_RX;
+    end
+    
+    ST_RX: begin
+        if (data_received)
+            fsm_state <= ST_CALC;
+    end
+    
+    ST_CALC: begin 
+    
+    
+    end
+    endcase
+    end
+end
+
+
 
 endmodule
 
