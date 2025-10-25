@@ -10,7 +10,7 @@ module DM(
 );
 
     // 256 x 32-bit memory
-    reg [31:0] memory [0:255];
+    reg [31:0] memory [0:8191];
 
     // Optional: manually preload a few words (for LW testing)
     initial begin
