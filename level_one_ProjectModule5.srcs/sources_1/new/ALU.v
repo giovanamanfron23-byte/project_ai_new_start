@@ -4,11 +4,13 @@ module ALU(
     input wire [31:0] A,
     input wire [31:0] B,
     input wire [2:0] ALUopcode,
+    input do_calc,
     output reg [31:0] result,
     output wire zero
 );
 
 always @(*) begin
+    if (do_calc)begin
     case(ALUopcode)
         3'b000: result = A + B;                       // ADD, ADDI, LW, SW
         3'b001: result = A - B;                       // SUB, BEQ, BNE
@@ -19,6 +21,7 @@ always @(*) begin
         3'b111: result = A << B[4:0];                      // NEW → SLL (shift left logical)
         default: result = 32'b0;
     endcase
+    end
 end
 
 assign zero = (result == 32'b0); // For BEQ/BNE comparison

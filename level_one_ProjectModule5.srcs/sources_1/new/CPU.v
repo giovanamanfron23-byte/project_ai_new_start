@@ -45,7 +45,12 @@ module CPU#(
     wire [31:0] read_data_memory;
     wire [31:0] write_data;
     wire zero_flag;
-
+    
+    reg do_calc = 1'd0;
+    reg we_want_to_send = 1'd0;
+    reg calc_done = 1'd0;
+    wire send_is_done;
+    
     // Instruction Memory
     instruction_memory imem (
         .address(PC),
@@ -84,6 +89,7 @@ module CPU#(
     ALU alu (
         .A(read_data1),
         .B(ALU_input_B),
+        .do_calc(do_calc),
         .ALUopcode(ALUopcode),
         .result(ALU_result),
         .zero(zero_flag)
@@ -126,6 +132,8 @@ module CPU#(
         .addr(pix_addr),
         .pixel_data(pix_info),
         .rec_done(data_received),
+        .we_want_to_send(we_want_to_send),
+        .send_is_done(send_is_done),
         .led(led),
         .D0_AN(D0_AN),
         .D0_SEG(D0_SEG),
@@ -135,9 +143,9 @@ module CPU#(
 
     // Write-back MUX
     assign write_data = (memory_to_register) ? read_data_memory : ALU_result;
-
+    
     // Next PC logic (normal increment or branch)
-/*    wire [31:0] PC_plus4 = PC + 32'd4;
+    wire [31:0] PC_plus4 = PC + 32'd4*do_calc;
     wire [31:0] branch_target = PC + (imm_ext << 2);
     
     wire is_beq = (opcode == 4'b1100);
@@ -152,13 +160,13 @@ module CPU#(
         else
             PC <= next_pc;
     end
-*/
+
 
  localparam ST_IDLE    = 2'd0,
                ST_RX   = 2'd1,
-               ST_CALC   = 2'd2,
-               ST_TRY   = 2'd3,
-               ST_GO    = 3'd4;
+               ST_CALC = 2'd2,
+               ST_SEND = 2'd3,
+               ST_GO   = 3'd4;
                
     
     reg  [2:0]  fsm_state = ST_IDLE;
@@ -181,7 +189,19 @@ always @(posedge clk) begin
     end
     
     ST_CALC: begin 
+        do_calc <=1;
+        if(calc_done)begin
+            do_calc <= 0;
+            we_want_to_send <=1;
+            fsm_state <= ST_SEND;
+        end
+    end
     
+    ST_SEND: begin 
+        
+        if (send_is_done)begin
+            fsm_state <= ST_IDLE;
+        end
     
     end
     endcase
