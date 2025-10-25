@@ -98,8 +98,8 @@ module CPU(
     wire [3:0] ready_to_write;
     wire [9:0] pix_addr;
     wire [23:0] pix_info;
-    wire        data_received;
-    wire        need_new_pix;
+    wire data_received;
+    wire need_new_pix;
     
     RAM pixel_storage(
         .clk_i(clk),
