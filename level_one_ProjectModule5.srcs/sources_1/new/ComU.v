@@ -5,7 +5,9 @@ module ComU #(
 (
     input  wire         clk,
     input  wire         rxd,
-    input  wire         need_new_pix,
+    input  wire         we_want_to_rec,
+    input  wire         we_want_to_send,
+    input  wire         the_number,
     output wire         txd,
     output wire [3:0]   ready,
     output wire [9:0]   addr,
@@ -154,7 +156,7 @@ module ComU #(
             ST_DONE: begin
                 led_show <= 16'hFFFF;
                 receive_done   <= 1;
-                if (send_done & need_new_pix) begin
+                if (send_done) begin
                     receive_done  <= 0;              
                     count_packets <= 32'd0;     
                     timeout_flag  <= 1'b0;

@@ -109,7 +109,7 @@ module CPU#(
     wire [9:0] pix_addr;
     wire [23:0] pix_info;
     wire data_received;
-    wire need_new_pix;
+    reg we_want_to_rec;
     
     RAM pixel_storage(
         .clk_i(clk),
@@ -126,13 +126,14 @@ module CPU#(
     ) Communication_Unit(
         .clk(clk),
         .rxd(rxd),
-        .need_new_pix(need_new_pix),
+        .we_want_to_rec(we_want_to_rec),
+        .we_want_to_send(we_want_to_send),
+        .the_number(the_number),
         .txd(txd),
         .ready(ready_to_write),
         .addr(pix_addr),
         .pixel_data(pix_info),
         .rec_done(data_received),
-        .we_want_to_send(we_want_to_send),
         .send_is_done(send_is_done),
         .led(led),
         .D0_AN(D0_AN),
@@ -184,8 +185,11 @@ always @(posedge clk) begin
     end
     
     ST_RX: begin
-        if (data_received)
+        we_want_to_rec <= 1;
+        if (data_received)begin
             fsm_state <= ST_CALC;
+            we_want_to_rec <= 0;
+        end
     end
     
     ST_CALC: begin 
@@ -201,6 +205,7 @@ always @(posedge clk) begin
         
         if (send_is_done)begin
             fsm_state <= ST_IDLE;
+            we_want_to_send <= 0;
         end
     
     end
