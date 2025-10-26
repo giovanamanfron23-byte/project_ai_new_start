@@ -34,20 +34,12 @@ endgenerate */
 //        if (memory_write)
 //            memory[address[9:2] & 8'd255] <= write_data;
 //    end
-
-    always @(*) begin
-        if (memory_read)
-            read_data = memory[address[9:2] & 15'd16383];  // word-aligned, safe masking
-        else
-            read_data = 32'b0;
-    end
-
     // Synchronous write
     always @(posedge clk) begin
         if (memory_write)
             memory[address[9:2] & 15'd16383] <= write_data;
         else if (memory_read)
-            read_data <= memory[address[9:2] & 8'd255];
+            read_data <= memory[address[9:2] & 15'd16383];
         else
             read_data <= 32'b0;
     end
