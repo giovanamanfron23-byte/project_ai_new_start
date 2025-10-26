@@ -44,6 +44,9 @@ module CPU#(
     wire [31:0] ALU_result;
     wire [31:0] read_data_memory;
     wire [31:0] write_data;
+    wire [31:0] dm_address;
+    wire dm_write;
+    wire dm_read;
     wire zero_flag;
     
     reg do_calc = 1'd0;
@@ -99,9 +102,9 @@ module CPU#(
     // Data Memory
     DM data_memory (
         .clk(clk),
-        .memory_write(memory_write),
-        .memory_read(memory_read),
-        .address(ALU_result),
+        .memory_write(dm_write),
+        .memory_read(dm_read),
+        .address(dm_address),
         .write_data(read_data2),
         .read_data(read_data_memory)
     );
@@ -155,6 +158,12 @@ module CPU#(
     wire is_bne = (opcode == 4'b1101);
     wire branch_condition = (is_beq && zero_flag) || (is_bne && !zero_flag);
     assign next_pc = (branch && branch_condition) ? branch_target : PC_plus4;
+    
+    assign dm_address = (fsm_state == ST_CALC)? ALU_result : pix_addr;
+    
+    assign dm_read = (fsm_state == ST_CALC)? memory_read : 1'd0;
+    
+    assign dm_write = (fsm_state == ST_CALC)? memory_write : ready_to_write;
 
     // Program Counter update
     always @(posedge clk or posedge rst) begin
