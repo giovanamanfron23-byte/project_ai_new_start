@@ -18,7 +18,8 @@ module ComU #(
     output wire [3:0]   D0_AN,
     output wire [7:0]   D0_SEG,
     output wire [3:0]   D1_AN,
-    output wire [7:0]   D1_SEG
+    output wire [7:0]   D1_SEG,
+    input  [3:0] ai_result,       // 0..9
 );
     wire [23:0] bram_dout;
     wire tx_ready;
@@ -48,6 +49,13 @@ module ComU #(
     localparam PKT_HEADER   = 3'b101;       
     localparam delay_cnt    = 32'd6400-1;  
     localparam PKT_EXPECTED = 32'd784;
+    
+    parameter integer RESULT_ADDR  = 32'h0000_0400; // override-friendly
+    parameter integer SHOW_SECONDS = 2;             // override-friendly
+    localparam integer SHOW_TICKS  = FREQ * SHOW_SECONDS;
+    reg [31:0] ai_show_cnt = 32'd0;
+    reg  [3:0] ai_digit    = 4'd0;   // 0..9
+    reg        show_ai_now = 1'b0;   // 1 = override 7-seg with ai_digit
 
     localparam ST_IDLE    = 2'd0,
                ST_BYTE1   = 2'd1,
@@ -193,6 +201,9 @@ module ComU #(
             bram_addr    <= 0;
             tx_en        <= 0;
             tx_byte      <= 0;
+            ai_show_cnt  <= 32'd0;
+            ai_digit     <= 4'd0;
+            show_ai_now  <= 1'b0;
         end else begin
             case (tx_state)
                 TX_IDLE: begin
@@ -230,20 +241,40 @@ module ComU #(
                     if (tx_byte_sel == 2'd2) begin
                         tx_byte_sel <= 0;
                         bram_addr <= bram_addr + 1;
-                        if (bram_addr == PKT_EXPECTED-1)begin
-                            send_done <= 1;
-                            tx_state <= TX_IDLE;
-                        end
-                        else begin
+                        if (bram_addr == PKT_EXPECTED-1) begin
+                            // OLD:
+                            // send_done <= 1;
+                            // tx_state  <= TX_IDLE;
+
+                            // NEW: go fetch AI result from DM and then show it
+                            tx_state <= TX_AI_REQ;
+                        end else begin
                             tx_state <= TX_WAIT;
                         end
-                    end 
-                    else begin
+                    end else begin
                         tx_byte_sel <= tx_byte_sel + 1;
                         tx_state <= TX_LOAD;
-                    end 
+                    end
                     tx_en <= 0;
+                end// --- NEW: read predicted class from DM and display it ---
+// Instead of issuing dm_re, just wait for ai_result_valid
+                TX_AI_REQ:  tx_state <= TX_AI_WAIT;
+                TX_AI_WAIT: if (we_want_to_send) begin
+                  ai_digit    <= ai_result;
+                  ai_show_cnt <= SHOW_TICKS;
+                  show_ai_now <= 1'b1;
+                  tx_state    <= TX_AI_SHOW;
+                end 
+                TX_AI_SHOW: begin
+                    if (ai_show_cnt != 32'd0) begin
+                        ai_show_cnt <= ai_show_cnt - 32'd1;
+                    end else begin
+                        show_ai_now <= 1'b0;
+                        send_done   <= 1'b1;  // NOW we tell RXFSM that the whole round is done
+                        tx_state    <= TX_IDLE;
+                    end
                 end
+
                 default: tx_state <= TX_IDLE;
             endcase
         end
@@ -277,17 +308,34 @@ module ComU #(
       reg  [3:0] digit_data [7:0];
     parameter REFRESH_PERIOD = 2000;
     
+    reg  [3:0] ai_digit = 4'd0;  
+    // keep these small regs you added
+    reg        show_ai_now = 1'b0;
+    
+    // replace your digit_data block with this mux
     always @(*) begin
+      if (show_ai_now) begin
+        digit_data[0] = ai_digit;
+        digit_data[1] = ai_digit;
+        digit_data[2] = ai_digit;
+        digit_data[3] = ai_digit;
+        digit_data[4] = ai_digit;
+        digit_data[5] = ai_digit;
+        digit_data[6] = ai_digit;
+        digit_data[7] = ai_digit;
+      end else begin
         digit_data[0] = count_packets[19:16];
         digit_data[1] = count_packets[23:20];
         digit_data[2] = count_packets[27:24];
         digit_data[3] = count_packets[31:28];
-        
         digit_data[4] = count_packets[3:0];
         digit_data[5] = count_packets[7:4];
         digit_data[6] = count_packets[11:8];
         digit_data[7] = count_packets[15:12];
+      end
     end
+
+
 
     reg [2:0] digit_index = 0;
     reg [15:0] refresh_counter = 0;

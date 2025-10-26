@@ -24,7 +24,7 @@ endgenerate */
     // Asynchronous read
     always @(*) begin
         if (memory_read)
-            read_data = memory[address[9:2] & 8'd255];  // word-aligned, safe masking
+            read_data = memory[address[9:2] & 13'd8191];  // word-aligned, safe masking
         else
             read_data = 32'b0;
     end
@@ -32,7 +32,7 @@ endgenerate */
     // Synchronous write
     always @(posedge clk) begin
         if (memory_write)
-            memory[address[9:2] & 8'd255] <= write_data;
+            memory[address[9:2] & 13'd8191] <= write_data;
     end
 
 endmodule
