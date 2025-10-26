@@ -3,16 +3,17 @@ module ComU #(
     parameter BAUD = 625_000
 )
 (
-    input  wire         clk,
-    input  wire         rxd,
-    input  wire         we_want_to_rec,
-    input  wire         we_want_to_send,
-    input  wire         the_number,
+    input           clk,
+    input           rxd,
+    input           we_want_to_rec,
+    input           we_want_to_send,
+    input           the_number,
     output wire         txd,
     output wire [3:0]   ready,
     output wire [9:0]   addr,
     output wire [23:0]  pixel_data,
     output wire         rec_done,
+    output reg          send_is_done,
     output wire [15:0]  led,
     output wire [3:0]   D0_AN,
     output wire [7:0]   D0_SEG,
@@ -96,7 +97,7 @@ module ComU #(
             ST_IDLE: begin
                 timeout_flag <= 1'b0;
                 cnt32b       <= 32'd0;
-                if (rx_ready && (rx_byte[7:5] == PKT_HEADER)) begin
+                if (rx_ready && (rx_byte[7:5] == PKT_HEADER) && we_want_to_rec) begin
                     packet_raw[23:16] <= rx_byte;
                     loc_reg[9:5] <= rx_byte[4:0];
                     fsm_state    <= ST_BYTE1;
@@ -196,7 +197,7 @@ module ComU #(
             case (tx_state)
                 TX_IDLE: begin
                     send_done <= 0;
-                    if (receive_done) begin
+                    if (receive_done && we_want_to_send) begin
                         tx_state        <= TX_WAIT;
                         tx_byte_sel     <= 0;
                         bram_addr       <= 0;

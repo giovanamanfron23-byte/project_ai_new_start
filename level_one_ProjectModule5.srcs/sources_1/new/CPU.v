@@ -5,9 +5,9 @@ module CPU#(
     parameter BAUD = 625_000
 )
 (
-    input wire clk,
-    input wire rst,
-    input wire rxd,
+    input  clk,
+    input  rst,
+    input  rxd,
     output wire txd,
     output wire [15:0]  led,
     output wire [3:0]   D0_AN,
@@ -50,6 +50,7 @@ module CPU#(
     reg we_want_to_send = 1'd0;
     reg calc_done = 1'd0;
     wire send_is_done;
+    reg the_number;
     
     // Instruction Memory
     instruction_memory imem (
@@ -110,6 +111,7 @@ module CPU#(
     wire [23:0] pix_info;
     wire data_received;
     reg we_want_to_rec;
+    reg result;
     
     RAM pixel_storage(
         .clk_i(clk),
@@ -174,7 +176,10 @@ module CPU#(
 
 always @(posedge clk) begin
     if(rst)begin
-    
+        we_want_to_send <= 0;
+        we_want_to_rec <= 0;
+        do_calc <= 0;
+        fsm_state <= ST_IDLE;
     end
     else begin
     case (fsm_state)
@@ -196,19 +201,20 @@ always @(posedge clk) begin
         do_calc <=1;
         if(calc_done)begin
             do_calc <= 0;
-            we_want_to_send <=1;
+            the_number <= result;
             fsm_state <= ST_SEND;
         end
     end
     
     ST_SEND: begin 
-        
+        we_want_to_send <=1;
         if (send_is_done)begin
             fsm_state <= ST_IDLE;
             we_want_to_send <= 0;
         end
     
     end
+    default: fsm_state <= ST_IDLE;
     endcase
     end
 end
