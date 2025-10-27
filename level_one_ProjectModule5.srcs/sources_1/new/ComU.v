@@ -19,7 +19,7 @@ module ComU #(
     output wire [7:0]   D0_SEG,
     output wire [3:0]   D1_AN,
     output wire [7:0]   D1_SEG,
-    input  [3:0] ai_result,       // 0..9
+    input  [3:0] ai_result       // 0..9
 );
     wire [23:0] bram_dout;
     wire tx_ready;
@@ -189,7 +189,10 @@ module ComU #(
                TX_WAIT = 2'd1,
                TX_READ = 2'd2,
                TX_LOAD = 2'd3,
-               TX_SEND = 3'd4;
+               TX_SEND = 3'd4,
+               TX_AI_REQ  = 3'd5,   // NEW
+               TX_AI_WAIT = 3'd6,   // NEW
+               TX_AI_SHOW = 3'd7;
                
     
     //Tx Part
