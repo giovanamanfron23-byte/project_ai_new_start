@@ -6,35 +6,35 @@ module DM(
     input  wire memory_read,
     input  wire [31:0] address,
     input  wire [31:0] write_data,
-    output reg  [31:0] read_data
+    output wire  [31:0] read_data
 );
-
+    reg [31:0] data_int;
     // 256 x 32-bit memory
     reg [31:0] memory [0:10000];
 
     initial 
     begin
-        $readmemh("mnist_image.mem", memory);
-        $readmemh("best_model_weights.mem", memory, 784);
+        $readmemh("mnist_image.mem", memory,11);
+        $readmemh("best_model_weights.mem", memory, 795);
     end
     // Asynchronous read
-//    always @(*) begin
-//        if (memory_read)
-//            read_data = memory[address[9:2] & 8'd255];  // word-aligned, safe masking
-//        else
-//            read_data = 32'b0;
-//    end
+    always @(*) begin
+        if (memory_read)
+            data_int = memory[address];  // word-aligned, safe masking
+        else
+            data_int = 32'b0;
+    end
 
+//     Synchronous write
+    always @(posedge clk) begin
+        if (memory_write)
+            memory[address] <= write_data;
+    end
     // Synchronous write
 //    always @(posedge clk) begin
 //        if (memory_write)
-//            memory[address[9:2] & 8'd255] <= write_data;
+//            memory[address[15:2]] <= write_data;
+//        data_int <= memory[address[15:2]];
 //    end
-    // Synchronous write
-    always @(posedge clk) begin
-        if (memory_write)
-            memory[address[15:2] & 15'd16383] <= write_data;
-        read_data <= memory[address[15:2] & 15'd16383];
-    end
-
+assign read_data = data_int;
 endmodule

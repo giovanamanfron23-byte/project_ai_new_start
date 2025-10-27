@@ -32,7 +32,7 @@ module tb_CPU;
   always #5 clk = ~clk;
 
   // match your program's RESULT_ADDR
-  localparam RESULT_ADDR = 32'h0000_0400;
+  localparam RESULT_ADDR = 32'd8624;
 
   initial begin
     // reset
