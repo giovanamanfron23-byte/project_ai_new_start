@@ -19,7 +19,7 @@ module ComU #(
     output wire [7:0]   D0_SEG,
     output wire [3:0]   D1_AN,
     output wire [7:0]   D1_SEG,
-    input  [3:0] ai_result,       // 0..9
+    input  [3:0] ai_result      // 0..9
 );
     wire [23:0] bram_dout;
     wire tx_ready;

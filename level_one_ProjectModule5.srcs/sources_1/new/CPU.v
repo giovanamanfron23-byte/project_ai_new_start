@@ -53,7 +53,7 @@ module CPU#(
     reg we_want_to_send = 1'd0;
     reg calc_done = 1'd0;
     wire send_is_done;
-    reg the_number;
+    reg [3:0] the_number;
     
     // Instruction Memory
     instruction_memory imem (
@@ -159,11 +159,23 @@ module CPU#(
     wire branch_condition = (is_beq && zero_flag) || (is_bne && !zero_flag);
     assign next_pc = (branch && branch_condition) ? branch_target : PC_plus4;
     
-    assign dm_address = (fsm_state == ST_CALC)? ALU_result : pix_addr;
+    assign dm_address = 
+        (fsm_state == ST_IDLE)? 32'd0:
+        (fsm_state == ST_RX)? pix_addr:
+        (fsm_state == ST_CALC)? ALU_result:
+        (fsm_state == ST_SEND)? 16'd8634 : 32'd0;
     
-    assign dm_read = (fsm_state == ST_CALC)? memory_read : 1'd0;
+    assign dm_read = 
+        (fsm_state == ST_IDLE)? 1'd0:
+        (fsm_state == ST_RX)? 1'd0:
+        (fsm_state == ST_CALC)? memory_read:
+        (fsm_state == ST_SEND)? 1'd1 : 1'd0;
     
-    assign dm_write = (fsm_state == ST_CALC)? memory_write : ready_to_write;
+    assign dm_write = 
+        (fsm_state == ST_IDLE)? 1'd0:
+        (fsm_state == ST_RX)? ready_to_write:
+        (fsm_state == ST_CALC)? memory_write:
+        (fsm_state == ST_SEND)? 1'd0 : 1'd0;
 
     // Program Counter update
     always @(posedge clk or posedge rst) begin
@@ -217,7 +229,8 @@ always @(posedge clk) begin
     
     ST_SEND: begin 
         we_want_to_send <=1;
-        if (send_is_done)begin
+        the_number <= read_data_memory;
+        if (send_is_done && (dm_address == 16'd8634))begin
             fsm_state <= ST_IDLE;
             we_want_to_send <= 0;
         end
