@@ -48,7 +48,7 @@ module tb_CPU;
 
     // Optionally confirm by peeking DM
     #1;
-    $display("DM[RESULT_ADDR] = 0x%08h",
+    $display("DM[11] = 0x%08h",
              uut.data_memory.memory[RESULT_ADDR>>2]);
 
     // done

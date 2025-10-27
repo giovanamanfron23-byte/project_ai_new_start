@@ -43,7 +43,7 @@ always @(*) begin
         4'b0110: begin              // SLT (R-type)
             register_write = 1;
             ALUSrc = 0;
-            ALUopcode = 3'b011;     // ALU set-less-than
+            ALUopcode = 3'b110;     // ALU set-less-than
         end
         4'b1110: begin              // SLL (R-type)
             register_write = 1;
