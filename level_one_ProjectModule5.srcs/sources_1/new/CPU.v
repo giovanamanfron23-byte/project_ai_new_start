@@ -53,7 +53,7 @@ module CPU#(
     reg we_want_to_send = 1'd0;
     reg calc_done = 1'd0;
     wire send_is_done;
-    reg [3:0] the_number;
+    reg the_number;
     
     // Instruction Memory
     instruction_memory imem (
@@ -125,27 +125,27 @@ module CPU#(
     
     );
     
-    ComU #(
-    .FREQ(FREQ), 
-    .BAUD(BAUD)
-    ) Communication_Unit(
-        .clk(clk),
-        .rxd(rxd),
-        .we_want_to_rec(we_want_to_rec),
-        .we_want_to_send(we_want_to_send),
-        .the_number(the_number),
-        .txd(txd),
-        .ready(ready_to_write),
-        .addr(pix_addr),
-        .pixel_data(pix_info),
-        .rec_done(data_received),
-        .send_is_done(send_is_done),
-        .led(led),
-        .D0_AN(D0_AN),
-        .D0_SEG(D0_SEG),
-        .D1_AN(D1_AN),
-        .D1_SEG(D1_SEG)
-    );
+//    ComU #(
+//    .FREQ(FREQ), 
+//    .BAUD(BAUD)
+//    ) Communication_Unit(
+//        .clk(clk),
+//        .rxd(rxd),
+//        .we_want_to_rec(we_want_to_rec),
+//        .we_want_to_send(we_want_to_send),
+//        .the_number(the_number),
+//        .txd(txd),
+//        .ready(ready_to_write),
+//        .addr(pix_addr),
+//        .pixel_data(pix_info),
+//        .rec_done(data_received),
+//        .send_is_done(send_is_done),
+//        .led(led),
+//        .D0_AN(D0_AN),
+//        .D0_SEG(D0_SEG),
+//        .D1_AN(D1_AN),
+//        .D1_SEG(D1_SEG)
+//    );
 
     // Write-back MUX
     assign write_data = (memory_to_register) ? read_data_memory : ALU_result;
@@ -159,23 +159,11 @@ module CPU#(
     wire branch_condition = (is_beq && zero_flag) || (is_bne && !zero_flag);
     assign next_pc = (branch && branch_condition) ? branch_target : PC_plus4;
     
-    assign dm_address = 
-        (fsm_state == ST_IDLE)? 32'd0:
-        (fsm_state == ST_RX)? pix_addr:
-        (fsm_state == ST_CALC)? ALU_result:
-        (fsm_state == ST_SEND)? 16'd8634 : 32'd0;
+    assign dm_address = (fsm_state == ST_CALC)? ALU_result : pix_addr;
     
-    assign dm_read = 
-        (fsm_state == ST_IDLE)? 1'd0:
-        (fsm_state == ST_RX)? 1'd0:
-        (fsm_state == ST_CALC)? memory_read:
-        (fsm_state == ST_SEND)? 1'd1 : 1'd0;
+    assign dm_read = (fsm_state == ST_CALC)? memory_read : 1'd0;
     
-    assign dm_write = 
-        (fsm_state == ST_IDLE)? 1'd0:
-        (fsm_state == ST_RX)? ready_to_write:
-        (fsm_state == ST_CALC)? memory_write:
-        (fsm_state == ST_SEND)? 1'd0 : 1'd0;
+    assign dm_write = (fsm_state == ST_CALC)? memory_write : ready_to_write;
 
     // Program Counter update
     always @(posedge clk or posedge rst) begin
@@ -212,7 +200,7 @@ always @(posedge clk) begin
     
     ST_RX: begin
         we_want_to_rec <= 1;
-        if (data_received)begin
+        if (1) begin
             fsm_state <= ST_CALC;
             we_want_to_rec <= 0;
         end
@@ -229,8 +217,7 @@ always @(posedge clk) begin
     
     ST_SEND: begin 
         we_want_to_send <=1;
-        the_number <= read_data_memory;
-        if (send_is_done && (dm_address == 16'd8634))begin
+        if (send_is_done)begin
             fsm_state <= ST_IDLE;
             we_want_to_send <= 0;
         end

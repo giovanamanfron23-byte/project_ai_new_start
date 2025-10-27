@@ -10,17 +10,13 @@ module DM(
 );
 
     // 256 x 32-bit memory
-    reg [31:0] memory [0:16383];
+    reg [31:0] memory [0:10000];
 
-/*generate 
-    // Optional: manually preload a few words (for LW testing)
-    initial begin
-        memory[0] = 32'd10;
-        memory[1] = 32'd20;
-        memory[2] = 32'd30;
-        // Others left uninitialized (default X or 0)
+    initial 
+    begin
+        $readmemh("mnist_image.mem", memory);
+        $readmemh("best_model_weights.mem", memory, 784);
     end
-endgenerate */
     // Asynchronous read
 //    always @(*) begin
 //        if (memory_read)
@@ -37,11 +33,8 @@ endgenerate */
     // Synchronous write
     always @(posedge clk) begin
         if (memory_write)
-            memory[address[9:2] & 15'd16383] <= write_data;
-        else if (memory_read)
-            read_data <= memory[address[9:2] & 15'd16383];
-        else
-            read_data <= 32'b0;
+            memory[address[15:2] & 15'd16383] <= write_data;
+        read_data <= memory[address[15:2] & 15'd16383];
     end
 
 endmodule
