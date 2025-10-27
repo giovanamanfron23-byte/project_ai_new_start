@@ -15,7 +15,7 @@ module DM(
     initial 
     begin
         //$readmemh("mnist_image.mem", memory,11);
-        $readmemh("best_model_weights.mem", memory, 795);
+//        $readmemh("best_model_weights.mem", memory, 795);
     end
     // Asynchronous read
     always @(*) begin
