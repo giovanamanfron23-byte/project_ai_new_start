@@ -131,7 +131,7 @@ module instruction_memory(
         memory[15] = {4'b0111, 5'd11, 5'd0, 5'd11, 13'd1}; // ADDI $r11, $r11, 1
         memory[16] = {4'b0111, 5'd9, 5'd0, 5'd9, 13'd1}; // ADDI $r9, $r9, 1
         memory[17] = {4'b0110, 5'd9, 5'd3, 5'd16, 13'd0}; // SLT  $r16, $r9, $r3
-        memory[18] = {4'b1101, 5'd16, 5'd0, 5'd0, 13'd(-8)}; // BNE  $r16, $zero, dot_loop
+        memory[18] = {4'b1101, 5'd16, 5'd0, 5'd0, 13'd8185}; // BNE  $r16, $zero, dot_loop
         //dot_done
         memory[19] = {4'b1011, 5'd7, 5'd15, 5'd0, 13'd0}; // SW    $r15, 0($r7)
         memory[20] = {4'b0110, 5'd5, 5'd15, 5'd16, 13'd0}; // SLT   $r16, $r5, $r15

@@ -43,8 +43,10 @@ module CPU#(
     wire [31:0] read_data1, read_data2;
     wire [31:0] ALU_result;
     wire [31:0] read_data_memory;
+    wire [31:0] pixel_data_back;
     wire [31:0] write_data;
     wire [31:0] dm_address;
+    wire [31:0] dm_data;
     wire dm_write;
     wire dm_read;
     wire zero_flag;
@@ -105,13 +107,14 @@ module CPU#(
         .memory_write(dm_write),
         .memory_read(dm_read),
         .address(dm_address),
-        .write_data(read_data2),
+        .write_data(dm_data),
         .read_data(read_data_memory)
     );
     wire [23:0] pix_out;
     wire [3:0] ready_to_write;
     wire [9:0] pix_addr;
     wire [23:0] pix_info;
+    wire [23:0] we_want_pix_back;
     wire data_received;
     reg we_want_to_rec;
     reg result;
@@ -125,27 +128,29 @@ module CPU#(
     
     );
     
-//    ComU #(
-//    .FREQ(FREQ), 
-//    .BAUD(BAUD)
-//    ) Communication_Unit(
-//        .clk(clk),
-//        .rxd(rxd),
-//        .we_want_to_rec(we_want_to_rec),
-//        .we_want_to_send(we_want_to_send),
-//        .the_number(the_number),
-//        .txd(txd),
-//        .ready(ready_to_write),
-//        .addr(pix_addr),
-//        .pixel_data(pix_info),
-//        .rec_done(data_received),
-//        .send_is_done(send_is_done),
-//        .led(led),
-//        .D0_AN(D0_AN),
-//        .D0_SEG(D0_SEG),
-//        .D1_AN(D1_AN),
-//        .D1_SEG(D1_SEG)
-//    );
+    ComU #(
+    .FREQ(FREQ), 
+    .BAUD(BAUD)
+    ) Communication_Unit(
+        .clk(clk),
+        .rxd(rxd),
+        .we_want_to_rec(we_want_to_rec),
+        .we_want_to_send(we_want_to_send),
+        .the_number(the_number),
+        .we_want_pix_back(we_want_pix_back),
+        .pixel_data_back(pixel_data_back),
+        .txd(txd),
+        .ready(ready_to_write),
+        .addr(pix_addr),
+        .pixel_data(pix_info),
+        .rec_done(data_received),
+        .send_is_done(send_is_done),
+        .led(led),
+        .D0_AN(D0_AN),
+        .D0_SEG(D0_SEG),
+        .D1_AN(D1_AN),
+        .D1_SEG(D1_SEG)
+    );
 
     // Write-back MUX
     assign write_data = (memory_to_register) ? read_data_memory : ALU_result;
@@ -159,11 +164,33 @@ module CPU#(
     wire branch_condition = (is_beq && zero_flag) || (is_bne && !zero_flag);
     assign next_pc = (branch && branch_condition) ? branch_target : PC_plus4;
     
-    assign dm_address = (fsm_state == ST_CALC)? ALU_result : pix_addr;
     
-    assign dm_read = (fsm_state == ST_CALC)? memory_read : 1'd0;
-    
-    assign dm_write = (fsm_state == ST_CALC)? memory_write : ready_to_write;
+    assign dm_data =
+        (fsm_state == ST_IDLE)? 32'd0:
+        (fsm_state == ST_RX)? pix_info:
+        (fsm_state == ST_CALC)? read_data2:
+        (fsm_state == ST_SEND)? pixel_data_back : 16'd0;
+        
+
+    assign dm_address = 
+        (fsm_state == ST_IDLE)? 32'd0:
+        (fsm_state == ST_RX)? pix_addr:
+        (fsm_state == ST_CALC)? ALU_result:
+        (fsm_state == ST_SEND)? pix_addr : 32'd0;
+
+
+    assign dm_read = 
+        (fsm_state == ST_IDLE)? 1'd0:
+        (fsm_state == ST_RX)? 1'd0:
+        (fsm_state == ST_CALC)? memory_read:
+        (fsm_state == ST_SEND)? 1'd1 : 1'd0;
+
+
+    assign dm_write = 
+        (fsm_state == ST_IDLE)? 1'd0:
+        (fsm_state == ST_RX)? ready_to_write:
+        (fsm_state == ST_CALC)? memory_write:
+        (fsm_state == ST_SEND)? 1'd0 : 1'd0;
 
     // Program Counter update
     always @(posedge clk or posedge rst) begin
@@ -200,7 +227,7 @@ always @(posedge clk) begin
     
     ST_RX: begin
         we_want_to_rec <= 1;
-        if (1) begin
+        if (data_received) begin
             fsm_state <= ST_CALC;
             we_want_to_rec <= 0;
         end
@@ -208,7 +235,7 @@ always @(posedge clk) begin
     
     ST_CALC: begin 
         do_calc <=1;
-        if(calc_done)begin
+        if(1)begin
             do_calc <= 0;
             the_number <= result;
             fsm_state <= ST_SEND;

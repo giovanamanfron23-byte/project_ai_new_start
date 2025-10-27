@@ -8,12 +8,14 @@ module ComU #(
     input           we_want_to_rec,
     input           we_want_to_send,
     input           the_number,
+    input           we_want_pix_back,
+    input           pixel_data_back,
     output wire         txd,
-    output wire [3:0]   ready,
+    output wire         ready,
     output wire [9:0]   addr,
     output wire [23:0]  pixel_data,
     output wire         rec_done,
-    output reg          send_is_done,
+    output wire         send_is_done,
     output wire [15:0]  led,
     output wire [3:0]   D0_AN,
     output wire [7:0]   D0_SEG,
@@ -196,7 +198,7 @@ module ComU #(
                
     
     //Tx Part
-    always @(posedge clk) begin
+  /*  always @(posedge clk) begin
         if (rst) begin
             send_done    <= 0;
             tx_state     <= TX_IDLE;
@@ -282,7 +284,73 @@ module ComU #(
             endcase
         end
     end
+    */
     
+    
+        always @(posedge clk) begin
+        if (rst) begin
+            send_done    <= 0;
+            tx_state     <= TX_IDLE;
+            tx_byte_sel  <= 0;
+            bram_addr    <= 0;
+            tx_en        <= 0;
+            tx_byte      <= 0;
+        end else begin
+            case (tx_state)
+                TX_IDLE: begin
+                    send_done <= 0;
+                    if (receive_done && we_want_to_send) begin
+                        tx_state        <= TX_WAIT;
+                        tx_byte_sel     <= 0;
+                        bram_addr       <= 0;
+                    end
+                    tx_en <= 0;
+                end
+                
+                TX_WAIT: begin                        
+                    tx_state <= TX_READ;
+                end
+                
+                TX_READ: begin
+                    //tx_data <= bram_dout;    
+                    tx_data <= pixel_data_back;                     
+                    tx_state <= TX_LOAD;
+                end
+                
+                TX_LOAD: begin
+                    if (tx_ready) begin
+                        case (tx_byte_sel)
+                           2'd0: tx_byte <= tx_data[23:16];
+                           2'd1: tx_byte <= tx_data[15:8];
+                           2'd2: tx_byte <= tx_data[7:0];
+                        endcase
+                        tx_en <= 1;   
+                        tx_state <= TX_SEND;
+                    end
+                end
+                
+                TX_SEND: begin
+                    if (tx_byte_sel == 2'd2) begin
+                        tx_byte_sel <= 0;
+                        bram_addr <= bram_addr + 1;
+                        if (bram_addr == PKT_EXPECTED-1)begin
+                            send_done <= 1;
+                            tx_state <= TX_IDLE;
+                        end
+                        else begin
+                            tx_state <= TX_WAIT;
+                        end
+                    end 
+                    else begin
+                        tx_byte_sel <= tx_byte_sel + 1;
+                        tx_state <= TX_LOAD;
+                    end 
+                    tx_en <= 0;
+                end
+                default: tx_state <= TX_IDLE;
+            endcase
+        end
+    end
     neorv32_sram_blockram #(
         .ADDR_WIDTH(10),
         .INIT_FILE("")
@@ -385,9 +453,10 @@ module ComU #(
     assign D1_AN  = D1_AN_reg;
     assign D1_SEG = D1_SEG_reg;
     
-assign ready = ((fsm_state == ST_CHECK && packet_ok)? 4'b1111 : 4'b0000);
-assign addr = bram_addr;
+assign ready = ((fsm_state == ST_CHECK && packet_ok)? 1'b1 : 1'b0);
+assign addr = (fsm_state == ST_CHECK && packet_ok) ? loc_reg + 10 : bram_addr+10;
 assign pixel_data = packet_raw;
 assign rec_done = receive_done;
+assign send_is_done = send_done;
 
 endmodule
