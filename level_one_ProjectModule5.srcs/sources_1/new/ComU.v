@@ -1,5 +1,5 @@
 module ComU #(
-    parameter FREQ = 50_000_000,
+    parameter FREQ = 100_000_000,
     parameter BAUD = 625_000
 )
 (
@@ -365,7 +365,7 @@ module ComU #(
     assign D1_SEG = D1_SEG_reg;
     
 assign ready = ((fsm_state == ST_CHECK && packet_ok)? 1'b1 : 1'b0);
-assign addr = (fsm_state == ST_CHECK && packet_ok) ? loc_reg + 11 : bram_addr+10;
+assign addr = (fsm_state == ST_CHECK && packet_ok) ? loc_reg + 11 : bram_addr;
 assign pixel_data = packet_raw;
 assign rec_done = receive_done;
 assign send_is_done = send_done;

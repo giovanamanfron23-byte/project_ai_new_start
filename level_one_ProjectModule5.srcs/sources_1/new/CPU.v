@@ -64,7 +64,7 @@ module CPU#(
         .address(PC),
         .instruction(instruction)
     );
-
+    wire branch_ne;
     // Control Unit
     CU control_unit (
         .opcode(opcode),
@@ -74,7 +74,8 @@ module CPU#(
         .memory_read(memory_read),
         .memory_write(memory_write),
         .memory_to_register(memory_to_register),
-        .branch(branch)
+        .branch(branch),
+        .branch_ne(branch_ne)
     );
 
     // Register File
@@ -129,7 +130,7 @@ module CPU#(
         .dout_o(pix_out)
     
     );
-    
+    wire [15:0] led1;
     ComU #(
     .FREQ(FREQ), 
     .BAUD(BAUD)
@@ -149,7 +150,7 @@ module CPU#(
         .pixel_data(pix_info),
         .rec_done(data_received),
         .send_is_done(send_is_done),
-        .led(led),
+        .led(led1),
         .D0_AN(D0_AN),
         .D0_SEG(D0_SEG),
         .D1_AN(D1_AN),
@@ -235,7 +236,7 @@ module CPU#(
         if (rst)
             PC <= 0;
         else
-            PC <= next_pc;
+            PC <= next_pc*do_calc;
     end
 
 
@@ -273,7 +274,7 @@ always @(posedge clk) begin
     
     ST_CALC: begin 
         do_calc <=1;
-        if(PC[9:2] > 28)begin
+        if(PC[9:2] > 100)begin
             do_calc <= 0;
 //            PC <= 0;
             fsm_state <= ST_SEND;
@@ -298,7 +299,7 @@ always @(posedge clk) begin
     end
 end
 
-
+assign led = PC [15:0];
 
 endmodule
 
