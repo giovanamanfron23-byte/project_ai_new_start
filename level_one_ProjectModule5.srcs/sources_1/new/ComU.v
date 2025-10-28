@@ -4,6 +4,7 @@ module ComU #(
 )
 (
     input           clk,
+    input           rst,
     input           rxd,
     input           we_want_to_rec,
     input           we_want_to_send,
@@ -29,13 +30,13 @@ module ComU #(
     wire [7:0] rx_byte;
     wire rst;
 
-    rst_gen #(
+/*    rst_gen #(
         .CC_ACTIVE(20)
     ) rst_gen_inst (
         .clk(clk),
         .rst(rst),
         .rst_n()
-    );
+    );*/
     
     uart_receive #(
         .CLK_FREQUENCY_HZ(FREQ),
@@ -183,7 +184,7 @@ module ComU #(
     reg [2:0] tx_state;
     reg [1:0] tx_byte_sel = 0;
     reg [9:0] bram_addr = 0;     
-    reg [23:0] tx_data = 0;
+    reg [31:0] tx_data = 0;
     reg tx_en = 0;
     reg [7:0] tx_byte = 8'd0;
     

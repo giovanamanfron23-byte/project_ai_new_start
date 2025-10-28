@@ -43,10 +43,12 @@ module CPU#(
     wire [31:0] read_data1, read_data2;
     wire [31:0] ALU_result;
     wire [31:0] read_data_memory;
-    wire [31:0] pixel_data_back;
+    wire [23:0] pixel_data_back;
     wire [31:0] write_data;
     wire [31:0] dm_address;
     wire [31:0] dm_data;
+    wire [31:0] dm_data_read;
+
     wire dm_write;
     wire dm_read;
     wire zero_flag;
@@ -108,7 +110,7 @@ module CPU#(
         .memory_read(dm_read),
         .address(dm_address),
         .write_data(dm_data),
-        .read_data(read_data_memory)
+        .read_data(dm_data_read)
     );
     wire [23:0] pix_out;
     wire [3:0] ready_to_write;
@@ -133,6 +135,7 @@ module CPU#(
     .BAUD(BAUD)
     ) Communication_Unit(
         .clk(clk),
+        .rst(rst),
         .rxd(rxd),
         .we_want_to_rec(we_want_to_rec),
         .we_want_to_send(we_want_to_send),
@@ -164,12 +167,18 @@ module CPU#(
     wire branch_condition = (is_beq && zero_flag) || (is_bne && !zero_flag);
     assign next_pc = (branch && branch_condition) ? branch_target : PC_plus4;
     
-    
+    assign dm_data_read =
+        (fsm_state == ST_IDLE)? 32'd0:
+        (fsm_state == ST_RX)? pix_info:
+        (fsm_state == ST_CALC)? read_data_memory:
+        (fsm_state == ST_SEND)? pixel_data_back : 16'd0;
+        
+        
     assign dm_data =
         (fsm_state == ST_IDLE)? 32'd0:
         (fsm_state == ST_RX)? pix_info:
         (fsm_state == ST_CALC)? read_data2:
-        (fsm_state == ST_SEND)? pixel_data_back : 16'd0;
+        (fsm_state == ST_SEND)? 1'd0 : 16'd0;
         
 
     assign dm_address = 
@@ -235,8 +244,9 @@ always @(posedge clk) begin
     
     ST_CALC: begin 
         do_calc <=1;
-        if(1)begin
+        if(PC[9:2] > 28)begin
             do_calc <= 0;
+            PC <= 0;
             the_number <= result;
             fsm_state <= ST_SEND;
         end
