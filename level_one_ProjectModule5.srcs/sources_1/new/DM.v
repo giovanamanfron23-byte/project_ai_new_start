@@ -10,20 +10,17 @@ module DM(
 );
 
     // 256 x 32-bit memory
-    reg [31:0] memory [0:255];
+    reg [31:0] memory [0:8191];
 
-    // Optional: manually preload a few words (for LW testing)
+    // Preload from external memory file (synthesizable for FPGA)
     initial begin
-        memory[0] = 32'd10;
-        memory[1] = 32'd20;
-        memory[2] = 32'd30;
-        // Others left uninitialized (default X or 0)
+        $readmemb("data_folder/best_model.h5", memory);
     end
 
     // Asynchronous read
     always @(*) begin
         if (memory_read)
-            read_data = memory[address[9:2] & 8'd255];  // word-aligned, safe masking
+            read_data = memory[address[9:2] & 8'd255];
         else
             read_data = 32'b0;
     end
@@ -33,6 +30,5 @@ module DM(
         if (memory_write)
             memory[address[9:2] & 8'd255] <= write_data;
     end
-    
-    
+
 endmodule

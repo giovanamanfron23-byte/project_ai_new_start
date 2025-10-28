@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module RF(
-    input wire clk, 
+    input wire clk,
     input wire reset,
     input wire register_write, 
     input wire [4:0] rs1, 
@@ -14,7 +14,6 @@ module RF(
 
     reg [31:0] registers [0:31]; 
     integer i; 
-    
 
     // ✅ Initialize all registers to 0 for simulation stability
     initial begin
@@ -26,7 +25,6 @@ module RF(
         registers[2] = 32'd10;
         registers[3] = 32'd15;
     end
-
     // ✅ Reset and write logic
     always @(posedge clk or posedge reset) begin  
         if (reset) begin 
