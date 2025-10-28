@@ -157,6 +157,13 @@ module CPU#(
         .D1_SEG(D1_SEG)
     );
 
+/*        PC program_control (
+        .PC(PC),
+        .immediate(imm_ext[12:0]),
+        .branch(branch),
+        .zero_flag(zero_flag),
+        .next_pc(next_pc)
+    );*/
     // Write-back MUX
     assign write_data = (memory_to_register) ? read_data_memory : ALU_result;
     
@@ -266,7 +273,7 @@ always @(posedge clk) begin
     
     ST_RX: begin
         we_want_to_rec <= 1;
-        if (data_received) begin
+        if (1) begin //data_received
             fsm_state <= ST_CALC;
             we_want_to_rec <= 0;
         end

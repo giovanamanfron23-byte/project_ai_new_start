@@ -149,3 +149,45 @@ module instruction_memory(
         instruction = memory[address[9:2]]; // word addressing
     end
 endmodule
+/*
+`timescale 1ns / 1ps
+module instruction_memory(
+    input  [31:0] address,
+    output reg [31:0] instruction
+);
+    reg [31:0] memory [0:15];
+    initial begin
+        // 0: r1 = 0
+        memory[0] = {4'b0111, 5'd0, 5'd0, 5'd1, 13'd0};       // ADDI r1, r0, 0
+
+        // 1: r4 = 800
+        memory[1] = {4'b0111, 5'd0, 5'd0, 5'd4, 13'd800};     // ADDI r4, r0, 800
+
+        // 2: loop start: LW r2, 0(r1)
+        memory[2] = {4'b1010, 5'd1, 5'd0, 5'd2, 13'd0};       // LW r2, 0(r1)
+
+        // 3: r3 = r2 + 1
+        memory[3] = {4'b0111, 5'd2, 5'd0, 5'd3, 13'd1};       // ADDI r3, r2, 1
+
+        // 4: SW 0(r1) = r3
+        memory[4] = {4'b1011, 5'd1, 5'd3, 5'd0, 13'd0};       // SW r3, 0(r1)
+
+        // 5: r1 = r1 + 1
+        memory[5] = {4'b0111, 5'd1, 5'd0, 5'd1, 13'd1};       // ADDI r1, r1, 1
+
+        // 6: SLT r5, r1, r4
+        memory[6] = {4'b0110, 5'd1, 5'd4, 5'd5, 13'd0};       // SLT r5, r1, r4
+
+        // 7: BNE r5, r0, -5 (back to loop start)
+        // offset = -5 instructions * 4 bytes = -20 bytes; 20/4=5, so imm = 8191-5+1=8187 (two's complement of 5)
+        memory[7] = {4'b1101, 5'd5, 5'd0, 5'd0, 13'd8187};    // BNE r5, r0, loop
+
+        // 8: NOP (stop)
+        memory[8] = 32'b0;
+    end
+
+    always @(*) begin
+        instruction = memory[address[9:2]]; // word addressing
+    end
+endmodule
+*/
