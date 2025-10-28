@@ -366,7 +366,7 @@ module ComU #(
     
 assign ready = ((fsm_state == ST_CHECK && packet_ok)? 1'b1 : 1'b0);
 assign addr = (fsm_state == ST_CHECK && packet_ok) ? loc_reg + 11 : bram_addr;
-assign pixel_data = packet_raw;
+assign pixel_data = {packet_raw[10:8], packet_raw[4:0]};
 assign rec_done = receive_done;
 assign send_is_done = send_done;
 

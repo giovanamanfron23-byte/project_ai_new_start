@@ -274,7 +274,7 @@ always @(posedge clk) begin
     
     ST_CALC: begin 
         do_calc <=1;
-        if(PC[9:2] > 100)begin
+        if(PC > 150)begin
             do_calc <= 0;
 //            PC <= 0;
             fsm_state <= ST_SEND;
@@ -299,7 +299,7 @@ always @(posedge clk) begin
     end
 end
 
-assign led = PC [15:0];
+assign led = do_calc;
 
 endmodule
 
