@@ -11,11 +11,12 @@ module DM(
     reg [31:0] data_int;
     // 256 x 32-bit memory
     reg [31:0] memory [0:10000];
-
+    
+    
     initial 
     begin
-        //$readmemh("mnist_image.mem", memory,11);
-        $readmemh("best_model_weights.mem", memory, 795);
+//        //$readmemh("mnist_image.mem", memory,11);
+        $readmemh("weights.mem", memory, 795);
     end
     // Asynchronous read
     always @(*) begin
@@ -29,6 +30,10 @@ module DM(
     always @(posedge clk) begin
         if (memory_write)
             memory[address] <= write_data;
+//        if (memory_read)
+//            data_int <= memory[address];
+//        else
+//            data_int <= 32'b0;
     end
     // Synchronous write
 //    always @(posedge clk) begin

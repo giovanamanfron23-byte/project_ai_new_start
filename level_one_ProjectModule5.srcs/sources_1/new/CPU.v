@@ -47,7 +47,7 @@ module CPU#(
     wire [31:0] write_data;
     wire [31:0] dm_address;
     wire [31:0] dm_data;
-    wire [31:0] dm_data_read;
+//    wire [31:0] dm_data_read;
 
     wire dm_write;
     wire dm_read;
@@ -110,10 +110,10 @@ module CPU#(
         .memory_read(dm_read),
         .address(dm_address),
         .write_data(dm_data),
-        .read_data(dm_data_read)
+        .read_data(read_data_memory)
     );
     wire [23:0] pix_out;
-    wire [3:0] ready_to_write;
+    wire  ready_to_write;
     wire [9:0] pix_addr;
     wire [23:0] pix_info;
     wire [23:0] we_want_pix_back;
@@ -139,6 +139,7 @@ module CPU#(
         .rxd(rxd),
         .we_want_to_rec(we_want_to_rec),
         .we_want_to_send(we_want_to_send),
+        .ai_result(read_data_memory[3:0]),
         .the_number(the_number),
         .we_want_pix_back(we_want_pix_back),
         .pixel_data_back(pixel_data_back),
@@ -159,7 +160,7 @@ module CPU#(
     assign write_data = (memory_to_register) ? read_data_memory : ALU_result;
     
     // Next PC logic (normal increment or branch)
-    wire [31:0] PC_plus4 = PC + 32'd4*do_calc;
+    wire [31:0] PC_plus4 = PC + 32'd4;
     wire [31:0] branch_target = PC + (imm_ext << 2);
     
     wire is_beq = (opcode == 4'b1100);
@@ -167,39 +168,67 @@ module CPU#(
     wire branch_condition = (is_beq && zero_flag) || (is_bne && !zero_flag);
     assign next_pc = (branch && branch_condition) ? branch_target : PC_plus4;
     
-    assign dm_data_read =
-        (fsm_state == ST_IDLE)? 32'd0:
-        (fsm_state == ST_RX)? pix_info:
-        (fsm_state == ST_CALC)? read_data_memory:
-        (fsm_state == ST_SEND)? pixel_data_back : 16'd0;
+    assign pixel_data_back = read_data_memory[23:0];
+    
+//    assign dm_data_read =
+//        (fsm_state == ST_IDLE)? 32'd0:
+//        (fsm_state == ST_RX)? pix_info:
+//        (fsm_state == ST_CALC)? read_data_memory:
+//        (fsm_state == ST_SEND)? pixel_data_back : 16'd0;
         
         
+//    assign dm_data =
+//        (fsm_state == ST_IDLE)? 32'd0:
+//        (fsm_state == ST_RX)? pix_info:
+//        (fsm_state == ST_CALC)? read_data2:
+//        (fsm_state == ST_SEND)? 1'd0 : 16'd0;
+        
+
+//    assign dm_address = 
+//        (fsm_state == ST_IDLE)? 32'd0:
+//        (fsm_state == ST_RX)? pix_addr:
+//        (fsm_state == ST_CALC)? ALU_result:
+//        (fsm_state == ST_SEND)? pix_addr : 32'd0;
+
+
+//    assign dm_read = 
+//        (fsm_state == ST_IDLE)? 1'd0:
+//        (fsm_state == ST_RX)? 1'd0:
+//        (fsm_state == ST_CALC)? memory_read:
+//        (fsm_state == ST_SEND)? 1'd1 : 1'd0;
+
+
+//    assign dm_write = 
+//        (fsm_state == ST_IDLE)? 1'd0:
+//        (fsm_state == ST_RX)? ready_to_write:
+//        (fsm_state == ST_CALC)? memory_write:
+//        (fsm_state == ST_SEND)? 1'd0 : 1'd0;
+// DM write data: zero-extend pixel triplet to 32 bits
     assign dm_data =
-        (fsm_state == ST_IDLE)? 32'd0:
-        (fsm_state == ST_RX)? pix_info:
-        (fsm_state == ST_CALC)? read_data2:
-        (fsm_state == ST_SEND)? 1'd0 : 16'd0;
-        
-
-    assign dm_address = 
-        (fsm_state == ST_IDLE)? 32'd0:
-        (fsm_state == ST_RX)? pix_addr:
-        (fsm_state == ST_CALC)? ALU_result:
-        (fsm_state == ST_SEND)? pix_addr : 32'd0;
-
-
-    assign dm_read = 
-        (fsm_state == ST_IDLE)? 1'd0:
-        (fsm_state == ST_RX)? 1'd0:
-        (fsm_state == ST_CALC)? memory_read:
-        (fsm_state == ST_SEND)? 1'd1 : 1'd0;
-
-
-    assign dm_write = 
-        (fsm_state == ST_IDLE)? 1'd0:
-        (fsm_state == ST_RX)? ready_to_write:
-        (fsm_state == ST_CALC)? memory_write:
-        (fsm_state == ST_SEND)? 1'd0 : 1'd0;
+        (fsm_state == ST_RX)   ? {8'h00, pix_info} :
+        (fsm_state == ST_CALC) ? read_data2        :
+                                 32'd0;
+    
+    // DM address selection
+    assign dm_address =
+        (fsm_state == ST_RX)   ? pix_addr    : // loc+10 from ComU during RX
+        (fsm_state == ST_CALC) ? ALU_result  :
+        (fsm_state == ST_SEND) ? pix_addr    : // bram_addr+10 from ComU during TX
+        (fsm_state == ST_SHOW_RES)? 10:
+                                 32'd0;
+    
+    // DM read enable
+    assign dm_read =
+        (fsm_state == ST_CALC) ? memory_read :
+        (fsm_state == ST_SEND) ? 1'b1        :
+        (fsm_state == ST_SHOW_RES) ? 1'b1    :
+                                 1'b0;
+    
+    // DM write enable (make sure ready_to_write is 1 bit!)
+    assign dm_write =
+        (fsm_state == ST_RX)   ? ready_to_write :
+        (fsm_state == ST_CALC) ? memory_write   :
+                                 1'b0;
 
     // Program Counter update
     always @(posedge clk or posedge rst) begin
@@ -214,7 +243,7 @@ module CPU#(
                ST_RX   = 2'd1,
                ST_CALC = 2'd2,
                ST_SEND = 2'd3,
-               ST_GO   = 3'd4;
+               ST_SHOW_RES   = 3'd4;
                
     
     reg  [2:0]  fsm_state = ST_IDLE;
@@ -246,20 +275,24 @@ always @(posedge clk) begin
         do_calc <=1;
         if(PC[9:2] > 28)begin
             do_calc <= 0;
-            PC <= 0;
-            the_number <= result;
+//            PC <= 0;
             fsm_state <= ST_SEND;
         end
     end
     
     ST_SEND: begin 
         we_want_to_send <=1;
+        the_number <= 0;
         if (send_is_done)begin
-            fsm_state <= ST_IDLE;
+            fsm_state <= ST_SHOW_RES;
             we_want_to_send <= 0;
         end
-    
     end
+    ST_SHOW_RES: begin
+        the_number <= 1;
+        fsm_state <= ST_IDLE;
+    end
+
     default: fsm_state <= ST_IDLE;
     endcase
     end

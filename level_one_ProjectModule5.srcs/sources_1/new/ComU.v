@@ -1,5 +1,5 @@
 module ComU #(
-    parameter FREQ = 100_000_000,
+    parameter FREQ = 50_000_000,
     parameter BAUD = 625_000
 )
 (
@@ -10,7 +10,7 @@ module ComU #(
     input           we_want_to_send,
     input           the_number,
     input           we_want_pix_back,
-    input           pixel_data_back,
+    input  [23:0]         pixel_data_back,
     output wire         txd,
     output wire         ready,
     output wire [9:0]   addr,
@@ -28,7 +28,7 @@ module ComU #(
     wire tx_ready;
     wire rx_ready;
     wire [7:0] rx_byte;
-    wire rst;
+//    wire rst;
 
 /*    rst_gen #(
         .CC_ACTIVE(20)
@@ -196,96 +196,6 @@ module ComU #(
                TX_AI_REQ  = 3'd5,   // NEW
                TX_AI_WAIT = 3'd6,   // NEW
                TX_AI_SHOW = 3'd7;
-               
-    
-    //Tx Part
-  /*  always @(posedge clk) begin
-        if (rst) begin
-            send_done    <= 0;
-            tx_state     <= TX_IDLE;
-            tx_byte_sel  <= 0;
-            bram_addr    <= 0;
-            tx_en        <= 0;
-            tx_byte      <= 0;
-            ai_show_cnt  <= 32'd0;
-            ai_digit     <= 4'd0;
-            show_ai_now  <= 1'b0;
-        end else begin
-            case (tx_state)
-                TX_IDLE: begin
-                    send_done <= 0;
-                    if (receive_done && we_want_to_send) begin
-                        tx_state        <= TX_WAIT;
-                        tx_byte_sel     <= 0;
-                        bram_addr       <= 0;
-                    end
-                    tx_en <= 0;
-                end
-                
-                TX_WAIT: begin                        
-                    tx_state <= TX_READ;
-                end
-                
-                TX_READ: begin
-                    tx_data <= bram_dout;                         
-                    tx_state <= TX_LOAD;
-                end
-                
-                TX_LOAD: begin
-                    if (tx_ready) begin
-                        case (tx_byte_sel)
-                           2'd0: tx_byte <= tx_data[23:16];
-                           2'd1: tx_byte <= tx_data[15:8];
-                           2'd2: tx_byte <= tx_data[7:0];
-                        endcase
-                        tx_en <= 1;   
-                        tx_state <= TX_SEND;
-                    end
-                end
-                
-                TX_SEND: begin
-                    if (tx_byte_sel == 2'd2) begin
-                        tx_byte_sel <= 0;
-                        bram_addr <= bram_addr + 1;
-                        if (bram_addr == PKT_EXPECTED-1) begin
-                            // OLD:
-                            // send_done <= 1;
-                            // tx_state  <= TX_IDLE;
-
-                            // NEW: go fetch AI result from DM and then show it
-                            tx_state <= TX_AI_REQ;
-                        end else begin
-                            tx_state <= TX_WAIT;
-                        end
-                    end else begin
-                        tx_byte_sel <= tx_byte_sel + 1;
-                        tx_state <= TX_LOAD;
-                    end
-                    tx_en <= 0;
-                end// --- NEW: read predicted class from DM and display it ---
-// Instead of issuing dm_re, just wait for ai_result_valid
-                TX_AI_REQ:  tx_state <= TX_AI_WAIT;
-                TX_AI_WAIT: if (we_want_to_send) begin
-                  ai_digit    <= ai_result;
-                  ai_show_cnt <= SHOW_TICKS;
-                  show_ai_now <= 1'b1;
-                  tx_state    <= TX_AI_SHOW;
-                end 
-                TX_AI_SHOW: begin
-                    if (ai_show_cnt != 32'd0) begin
-                        ai_show_cnt <= ai_show_cnt - 32'd1;
-                    end else begin
-                        show_ai_now <= 1'b0;
-                        send_done   <= 1'b1;  // NOW we tell RXFSM that the whole round is done
-                        tx_state    <= TX_IDLE;
-                    end
-                end
-
-                default: tx_state <= TX_IDLE;
-            endcase
-        end
-    end
-    */
     
     
         always @(posedge clk) begin
@@ -378,23 +288,23 @@ module ComU #(
     
     
       reg  [3:0] digit_data [7:0];
-    parameter REFRESH_PERIOD = 2000;
+      parameter REFRESH_PERIOD = 2000;
     
-    reg  [3:0] ai_digit = 4'd0;  
+//    reg  [3:0] ai_digit = 4'd0;  
     // keep these small regs you added
-    reg        show_ai_now = 1'b0;
+//    reg        show_ai_now = 1'b0;
     
     // replace your digit_data block with this mux
     always @(*) begin
-      if (show_ai_now) begin
-        digit_data[0] = ai_digit;
-        digit_data[1] = ai_digit;
-        digit_data[2] = ai_digit;
-        digit_data[3] = ai_digit;
-        digit_data[4] = ai_digit;
-        digit_data[5] = ai_digit;
-        digit_data[6] = ai_digit;
-        digit_data[7] = ai_digit;
+      if (the_number) begin
+        digit_data[0] = ai_result;
+        digit_data[1] = ai_result;
+        digit_data[2] = ai_result;
+        digit_data[3] = ai_result;
+        digit_data[4] = ai_result;
+        digit_data[5] = ai_result;
+        digit_data[6] = ai_result;
+        digit_data[7] = ai_result;
       end else begin
         digit_data[0] = count_packets[19:16];
         digit_data[1] = count_packets[23:20];
@@ -455,7 +365,7 @@ module ComU #(
     assign D1_SEG = D1_SEG_reg;
     
 assign ready = ((fsm_state == ST_CHECK && packet_ok)? 1'b1 : 1'b0);
-assign addr = (fsm_state == ST_CHECK && packet_ok) ? loc_reg + 10 : bram_addr+10;
+assign addr = (fsm_state == ST_CHECK && packet_ok) ? loc_reg + 11 : bram_addr+10;
 assign pixel_data = packet_raw;
 assign rec_done = receive_done;
 assign send_is_done = send_done;
